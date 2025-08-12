@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preflop Advisor — UI</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 0; padding: 24px; }
+    header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+    .card { border:1px solid #e2e2e2; border-radius:12px; padding:16px; margin:12px 0; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; }
+    label { font-size:14px; color:#333; display:block; margin-bottom:6px; }
+    input, select, button, textarea { font-size:16px; padding:10px; border-radius:8px; border:1px solid #ccc; }
+    button { cursor:pointer; }
+    .w200 { width:200px; }
+    .w120 { width:120px; }
+    pre { background:#0f172a; color:#d1d5db; padding:12px; border-radius:8px; overflow:auto; }
+    footer { margin-top:24px; color:#555; font-size:13px; }
+    .note { font-size: 13px; color:#666; }
+  </style>
+</head>
+<body>
+<header>
+  <h2 style="margin:0;">Preflop Advisor — ממשק קליל</h2>
+</header>
+
+<section class="card">
+  <h3 style="margin-top:0;">הגדרות</h3>
+  <div class="row">
+    <div>
+      <label>API Base URL</label>
+      <input id="apiBase" class="w200" value="https://preflop-zon3.onrender.com" />
+      <div class="note">אפשר לשנות אם תעשה דיפלוי חדש ב-Render</div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h3 style="margin-top:0;">קופה לא פתוחה — Open / Shove</h3>
+  <div class="row">
+    <div>
+      <label>יד</label>
+      <input id="hand1" class="w120" placeholder="AKs / AJo / 22 / AhKh">
+    </div>
+    <div>
+      <label>עמדה</label>
+      <select id="pos1" class="w120">
+        <option>UTG</option><option>MP</option><option>HJ</option><option>CO</option>
+        <option>BTN</option><option>SB</option><option>BB</option>
+      </select>
+    </div>
+    <div>
+      <label>סטאק (BB)</label>
+      <input id="stack1" class="w120" type="number" value="40">
+    </div>
+    <div>
+      <label>מצב</label>
+      <select id="ctx1" class="w120">
+        <option value="auto" selected>auto</option>
+        <option value="open">open</option>
+        <option value="shove">shove</option>
+      </select>
+    </div>
+    <div style="align-self:end">
+      <button onclick="sendRecommend()">חשב</button>
+    </div>
+  </div>
+  <div>
+    <label>תוצאה</label>
+    <pre id="out1">{}</pre>
+  </div>
+</section>
+
+<section class="card">
+  <h3 style="margin-top:0;">מול פתיחה — 3-Bet</h3>
+  <div class="row">
+    <div>
+      <label>יד</label>
+      <input id="hand2" class="w120" placeholder="QQ / A5s / AQo">
+    </div>
+    <div>
+      <label>העמדה שלך</label>
+      <select id="hero2" class="w120">
+        <option>UTG</option><option>MP</option><option>HJ</option><option>CO</option>
+        <option>BTN</option><option>SB</option><option>BB</option>
+      </select>
+    </div>
+    <div>
+      <label>עמדת הפותח</label>
+      <select id="opener2" class="w120">
+        <option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option>
+      </select>
+    </div>
+    <div>
+      <label>סטאק (BB)</label>
+      <input id="stack2" class="w120" type="number" value="50">
+    </div>
+    <div style="align-self:end">
+      <button onclick="sendVsOpen()">חשב</button>
+    </div>
+  </div>
+  <div>
+    <label>תוצאה</label>
+    <pre id="out2">{}</pre>
+  </div>
+</section>
+
+<footer>
+  💡 טיפ: אפשר לשמור קיצור דרך למסך הזה בטלפון. קוד רץ בדפדפן ומדבר עם ה-API בענן.
+</footer>
+
+<script>
+async function sendRecommend() {
+  const base = document.getElementById('apiBase').value.trim().replace(/\/+$/,'')
+  const body = {
+    hand: document.getElementById('hand1').value.trim(),
+    position: document.getElementById('pos1').value.trim(),
+    stack: Number(document.getElementById('stack1').value),
+    context: document.getElementById('ctx1').value
+  }
+  const res = await fetch(base + '/recommend', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  })
+  const data = await res.json()
+  document.getElementById('out1').textContent = JSON.stringify(data, null, 2)
+}
+
+async function sendVsOpen() {
+  const base = document.getElementById('apiBase').value.trim().replace(/\/+$/,'')
+  const body = {
+    hand: document.getElementById('hand2').value.trim(),
+    hero_pos: document.getElementById('hero2').value.trim(),
+    opener_pos: document.getElementById('opener2').value.trim(),
+    stack: Number(document.getElementById('stack2').value)
+  }
+  const res = await fetch(base + '/vs-open', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  })
+  const data = await res.json()
+  document.getElementById('out2').textContent = JSON.stringify(data, null, 2)
+}
+</script>
+
+</body>
+</html>
