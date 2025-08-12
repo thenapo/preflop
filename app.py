@@ -1,40 +1,57 @@
-
-import os
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
-import poker_range_recommender as pr
+from pydantic import BaseModel
+from poker_range_recommender import get_recommendation, recommend_vs_open
+from fastapi.middleware.cors import CORSMiddleware
 
+# יצירת האפליקציה
 app = FastAPI(
     title="Preflop Advisor API",
-    version="0.1.0",
+    version="1.0.0",
     description="Open / Shove / 3-Bet recommendations based on your range book."
 )
 
-class RecommendBody(BaseModel):
-    hand: str = Field(..., description="e.g., AKs, AJo, 22, AhKh")
-    position: str = Field(..., description="UTG/MP/HJ/CO/BTN/SB/BB")
-    stack: float = Field(..., description="Stack in big blinds")
-    context: str = Field("auto", pattern="^(auto|open|shove)$", description="auto|open|shove")
+# הגדרת CORS - זמנית אפשר לאפשר לכולם עם "*", ואח"כ לצמצם לכתובת ה-GitHub Pages שלך
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://thenapo.github.io",           # הדומיין שלך ב-GitHub Pages
+        "https://thenapo.github.io/preflop"    # תת-תיקייה אם צריך
+        # "*",  # ← אם תרצה לאפשר לכולם לבדיקה מהירה
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],  # מאפשר את כל סוגי הבקשות (GET, POST, OPTIONS)
+    allow_headers=["*"],  # מאפשר כל כותרות (Headers)
+)
 
-class VsOpenBody(BaseModel):
+# מודלים לנתונים נכנסים
+class RecommendRequest(BaseModel):
     hand: str
-    hero_pos: str = Field(..., description="Your position: UTG/MP/HJ/CO/BTN/SB/BB")
-    opener_pos: str = Field(..., description="Opener position: UTG/MP/HJ/CO/BTN")
-    stack: float
+    position: str
+    stack: int
 
+class VsOpenRequest(BaseModel):
+    hand: str
+    position: str
+    open_position: str
+    stack: int
+
+# בדיקת חיות השרת
 @app.get("/health")
-def health():
-    return {"ok": True}
+async def health():
+    return {"status": "ok"}
 
+# המלצה רגילה
 @app.post("/recommend")
-def recommend(body: RecommendBody):
-    return pr.recommend_action(body.hand, body.position, body.stack, body.context)
+async def recommend(req: RecommendRequest):
+    return {"recommendation": get_recommendation(req.hand, req.position, req.stack)}
 
+# המלצה נגד פתיחה
 @app.post("/vs-open")
-def vs_open(body: VsOpenBody):
-    return pr.recommend_vs_open(body.hand, body.hero_pos, body.opener_pos, body.stack)
+async def vs_open(req: VsOpenRequest):
+    return {"recommendation": recommend_vs_open(req.hand, req.position, req.open_position, req.stack)}
 
-# Convenience root
+# דף בית (לא חובה)
 @app.get("/")
-def root():
-    return {"service": "Preflop Advisor API", "docs": "/docs", "health": "/health"}
+async def root():
+    return {"message": "Preflop Advisor API is running"}
+
