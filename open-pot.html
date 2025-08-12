@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>פתיחה + יחס קופה</title>
+  <style>
+    :root { --bd:#e5e7eb; --tx:#111827; --sub:#6b7280; --ok:#065f46; --err:#991b1b; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:#fafafa; color:var(--tx); }
+    header { padding:18px 20px; background:#fff; border-bottom:1px solid var(--bd); position:sticky; top:0; display:flex; gap:10px; align-items:center;}
+    a.nav { font-size:14px; color:#2563eb; text-decoration:none; }
+    main { max-width:880px; margin:22px auto; padding:0 16px; }
+    h2 { margin:0 0 10px; font-size:18px; }
+    .card { background:#fff; border:1px solid var(--bd); border-radius:12px; padding:16px; margin-bottom:16px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+    label { font-size:13px; color:var(--sub); display:block; margin:0 0 6px; }
+    input, select, button { font-size:15px; padding:10px 12px; border-radius:10px; border:1px solid var(--bd); background:#fff; }
+    input[type="number"] { width:120px; }
+    .w120 { width:120px; } .w160 { width:160px; }
+    button { cursor:pointer; }
+    button.primary { background:#111827; color:#fff; border-color:#111827; }
+    .result { border:1px dashed var(--bd); border-radius:10px; padding:12px; background:#fcfcfc; white-space:pre-wrap; min-height:44px; }
+    .msg { padding:10px 12px; border-radius:10px; }
+    .msg.ok { background:#ecfdf5; color:var(--ok); border:1px solid #a7f3d0; }
+    .msg.err { background:#fef2f2; color:var(--err); border:1px solid #fecaca; }
+    .kvs { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+    .kv { padding:6px 10px; border-radius:999px; background:#f3f4f6; font-size:13px; }
+    .spinner { display:none; width:16px; height:16px; border:2px solid #d1d5db; border-top-color:#111827; border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; margin-inline-start:8px;}
+    .spinner.show { display:inline-block; }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .muted { color:var(--sub); font-size:13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 style="margin:0;font-size:20px;">המלצת פתיחה + מחשבון יחס קופה</h1>
+    <a class="nav" href="./">↩ חזרה לעמוד הראשי</a>
+  </header>
+  <main>
+
+    <!-- המלצת פתיחה -->
+    <section class="card">
+      <h2>המלצת פתיחה (Open/Shove)</h2>
+      <div class="row">
+        <div>
+          <label>יד</label>
+          <input id="hand1" class="w120" placeholder="AKs / AJo / 22 / AhKh">
+        </div>
+        <div>
+          <label>עמדה</label>
+          <select id="pos1" class="w120">
+            <option>UTG</option><option>MP</option><option>HJ</option>
+            <option>CO</option><option>BTN</option><option>SB</option><option>BB</option>
+          </select>
+        </div>
+        <div>
+          <label>סטאק (BB)</label>
+          <input id="stack1" type="number" value="40" min="1" step="1">
+        </div>
+        <div>
+          <label>מצב</label>
+          <select id="ctx1" class="w120">
+            <option value="auto" selected>auto</option>
+            <option value="open">open</option>
+            <option value="shove">shove</option>
+          </select>
+        </div>
+        <div>
+          <button id="btn1" class="primary">חשב</button>
+          <span class="spinner" id="sp1"></span>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="result" id="out1">—</div>
+      </div>
+      <div class="muted">מבוסס על ה-API בענן.</div>
+    </section>
+
+    <!-- מחשבון יחס קופה -->
+    <section class="card">
+      <h2>מחשבון יחס קופה (Pot Odds)</h2>
+      <div class="row">
+        <div>
+          <label>גודל קופה לפני קול</label>
+          <input id="pot" type="number" step="0.01" value="100">
+        </div>
+        <div>
+          <label>סכום לקול</label>
+          <input id="call" type="number" step="0.01" value="33">
+        </div>
+        <div>
+          <label>רייק (אופציונלי)</label>
+          <input id="rake" type="number" step="0.01" value="0">
+        </div>
+        <div>
+          <label>הערכת Equity (אופציונלי, 0–100%)</label>
+          <input id="eq" type="number" step="0.1" value="" placeholder="למשל 35">
+        </div>
+        <div>
+          <button id="btnPot" class="primary">חשב</button>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="result" id="outPot">—</div>
+      </div>
+      <div class="muted">נוסחאות בסיסיות רצות בדפדפן: אין צורך ב-API.</div>
+    </section>
+
+  </main>
+
+  <script>
+    // ===== תצורה =====
+    const API_BASE_URL = "https://preflop-zon3.onrender.com";
+
+    // ===== עוזרים =====
+    const byId = (id) => document.getElementById(id);
+    const show = (el, on) => el.classList.toggle('show', !!on);
+
+    function renderOpenResult(container, obj) {
+      if (!obj) { container.textContent = '—'; return; }
+      if (obj.error) {
+        container.innerHTML = '<div class="msg err"><b>שגיאה:</b> ' + obj.error + '</div>';
+        return;
+      }
+      let html = '';
+      if (obj.decision) html += '<div class="msg ok"><b>' + obj.decision + '</b></div>';
+      let kvs = [];
+      if (obj.sizing) kvs.push('סייזינג: ' + obj.sizing);
+      if (obj.why) kvs.push('הסבר: ' + obj.why);
+      if (kvs.length) html += '<div class="kvs">' + kvs.map(k => '<span class="kv">'+k+'</span>').join('') + '</div>';
+      container.innerHTML = html || '<pre>'+JSON.stringify(obj, null, 2)+'</pre>';
+    }
+
+    async function callJSON(url, body) {
+      const res = await fetch(url, {
+        method:'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        let t = await res.text();
+        try { return JSON.parse(t); } catch(e) { throw new Error('HTTP '+res.status+' '+t); }
+      }
+      return res.json();
+    }
+
+    // ===== המלצת פתיחה =====
+    byId('btn1').addEventListener('click', async () => {
+      const out = byId('out1'), sp = byId('sp1');
+      try {
+        const hand = byId('hand1').value.trim();
+        const position = byId('pos1').value.trim();
+        const stack = Number(byId('stack1').value);
+        const context = byId('ctx1').value;
+        if (!hand || !position || !stack) {
+          renderOpenResult(out, {error:'נא למלא יד, עמדה וסטאק'}); return;
+        }
+        show(sp, true); out.textContent = 'טוען...';
+        const data = await callJSON(`${API_BASE_URL}/recommend`, {hand, position, stack, context});
+        renderOpenResult(out, data);
+      } catch (err) {
+        renderOpenResult(out, {error: String(err.message || err)});
+      } finally {
+        show(sp, false);
+      }
+    });
+
+    // ===== מחשבון יחס קופה (בדפדפן) =====
+    function potOdds(potBefore, toCall, rake=0) {
+      // מחזיר: מחיר, אחוז Equity דרוש, וגודל קופה סופי (לפני רייק)
+      const finalPot = potBefore + toCall;
+      const price = toCall / finalPot; // יחס קופה קלאסי
+      const required = (toCall + rake) / finalPot; // התאמה לרייק (אם יש)
+      return { price, required, finalPot };
+    }
+    function callEV(equity, potBefore, toCall, rake=0) {
+      // EV(call) = equity*(potBefore+toCall-rake) - (1-equity)*toCall
+      return equity * (potBefore + toCall - rake) - (1 - equity) * toCall;
+    }
+
+    byId('btnPot').addEventListener('click', () => {
+      const pot = Number(byId('pot').value);
+      const toCall = Number(byId('call').value);
+      const rake = Number(byId('rake').value || 0);
+      const eqInput = byId('eq').value;
+      if (!(pot >= 0) || !(toCall > 0)) {
+        byId('outPot').innerHTML = '<div class="msg err"><b>שגיאה:</b> נא להזין קופה ≥ 0 וסכום לקול > 0</div>';
+        return;
+      }
+      const {price, required, finalPot} = potOdds(pot, toCall, rake);
+      let html = '';
+      html += `<div class="msg ok"><b>Required Equity:</b> ${(required*100).toFixed(2)}%</div>`;
+      html += '<div class="kvs">';
+      html += `<span class="kv">Price: ${(price*100).toFixed(2)}%</span>`;
+      html += `<span class="kv">Final Pot (לפני רייק): ${finalPot.toFixed(2)}</span>`;
+      html += `<span class="kv">Rake בחישוב: ${rake.toFixed(2)}</span>`;
+      html += '</div>';
+      if (eqInput !== '') {
+        const eq = Math.max(0, Math.min(100, Number(eqInput))) / 100;
+        const ev = callEV(eq, pot, toCall, rake);
+        html += `<div class="kvs"><span class="kv">Equity שלך: ${(eq*100).toFixed(2)}%</span><span class="kv">EV(call): ${ev.toFixed(2)}</span></div>`;
+      }
+      byId('outPot').innerHTML = html;
+    });
+  </script>
+</body>
+</html>
