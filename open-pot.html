@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>פתיחה + יחס קופה</title>
+  <title>פתיחה + יחס קופה + 3-Bet</title>
   <style>
     :root { --bd:#e5e7eb; --tx:#111827; --sub:#6b7280; --ok:#065f46; --err:#991b1b; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:#fafafa; color:var(--tx); }
     header { padding:18px 20px; background:#fff; border-bottom:1px solid var(--bd); position:sticky; top:0; display:flex; gap:10px; align-items:center;}
     a.nav { font-size:14px; color:#2563eb; text-decoration:none; }
-    main { max-width:880px; margin:22px auto; padding:0 16px; }
+    main { max-width:960px; margin:22px auto; padding:0 16px; }
     h2 { margin:0 0 10px; font-size:18px; }
     .card { background:#fff; border:1px solid var(--bd); border-radius:12px; padding:16px; margin-bottom:16px; }
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
@@ -33,12 +33,13 @@
 </head>
 <body>
   <header>
-    <h1 style="margin:0;font-size:20px;">המלצת פתיחה + מחשבון יחס קופה</h1>
+    <h1 style="margin:0;font-size:20px;">המלצת פתיחה + מחשבון יחס קופה + 3-Bet</h1>
     <a class="nav" href="./">↩ חזרה לעמוד הראשי</a>
   </header>
+
   <main>
 
-    <!-- המלצת פתיחה -->
+    <!-- 1) המלצת פתיחה -->
     <section class="card">
       <h2>המלצת פתיחה (Open/Shove)</h2>
       <div class="row">
@@ -76,7 +77,7 @@
       <div class="muted">מבוסס על ה-API בענן.</div>
     </section>
 
-    <!-- מחשבון יחס קופה -->
+    <!-- 2) מחשבון יחס קופה -->
     <section class="card">
       <h2>מחשבון יחס קופה (Pot Odds)</h2>
       <div class="row">
@@ -106,13 +107,50 @@
       <div class="muted">נוסחאות בסיסיות רצות בדפדפן: אין צורך ב-API.</div>
     </section>
 
+    <!-- 3) מול פתיחה (3-Bet) -->
+    <section class="card">
+      <h2>מול פתיחה (3-Bet)</h2>
+      <div class="row">
+        <div>
+          <label>יד</label>
+          <input id="hand2" class="w120" placeholder="QQ / A5s / AQo">
+        </div>
+        <div>
+          <label>העמדה שלך</label>
+          <select id="hero2" class="w120">
+            <option>UTG</option><option>MP</option><option>HJ</option>
+            <option>CO</option><option>BTN</option><option>SB</option><option>BB</option>
+          </select>
+        </div>
+        <div>
+          <label>עמדת הפותח</label>
+          <select id="opener2" class="w120">
+            <option>UTG</option><option>MP</option><option>HJ</option>
+            <option>CO</option><option>BTN</option>
+          </select>
+        </div>
+        <div>
+          <label>סטאק (BB)</label>
+          <input id="stack2" type="number" value="50" min="1" step="1">
+        </div>
+        <div>
+          <button id="btn2" class="primary">חשב</button>
+          <span class="spinner" id="sp2"></span>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="result" id="out2">—</div>
+      </div>
+      <div class="muted">נשלח ל-API: ‎/vs-open</div>
+    </section>
+
   </main>
 
   <script>
-    // ===== תצורה =====
-    const API_BASE_URL = "https://preflop-zon3.onrender.com";
+    /* ===== תצורה ===== */
+    const API_BASE_URL = "https://preflop-zon3.onrender.com"; // החלף אם תחליף דומיין ב-Render
 
-    // ===== עוזרים =====
+    /* ===== עוזרים ===== */
     const byId = (id) => document.getElementById(id);
     const show = (el, on) => el.classList.toggle('show', !!on);
 
@@ -126,9 +164,21 @@
       if (obj.decision) html += '<div class="msg ok"><b>' + obj.decision + '</b></div>';
       let kvs = [];
       if (obj.sizing) kvs.push('סייזינג: ' + obj.sizing);
-      if (obj.why) kvs.push('הסבר: ' + obj.why);
+      if (obj.why)    kvs.push('הסבר: ' + obj.why);
       if (kvs.length) html += '<div class="kvs">' + kvs.map(k => '<span class="kv">'+k+'</span>').join('') + '</div>';
-      container.innerHTML = html || '<pre>'+JSON.stringify(obj, null, 2)+'</pre>';
+      container.innerHTML = html || '<pre>'+JSON.stringify(obj,null,2)+'</pre>';
+    }
+
+    function renderVsOpen(container, obj){
+      if (!obj) { container.textContent = '—'; return; }
+      if (obj.error) { container.innerHTML = '<div class="msg err"><b>שגיאה:</b> '+obj.error+'</div>'; return; }
+      let html = '';
+      if (obj.decision) html += '<div class="msg ok"><b>'+obj.decision+'</b></div>';
+      let kvs = [];
+      if (obj.sizing) kvs.push('סייזינג: ' + obj.sizing);
+      if (obj.why)    kvs.push('הסבר: '   + obj.why);
+      if (kvs.length) html += '<div class="kvs">' + kvs.map(k => '<span class="kv">'+k+'</span>').join('') + '</div>';
+      container.innerHTML = html || '<pre>'+JSON.stringify(obj,null,2)+'</pre>';
     }
 
     async function callJSON(url, body) {
@@ -144,7 +194,7 @@
       return res.json();
     }
 
-    // ===== המלצת פתיחה =====
+    /* ===== 1) המלצת פתיחה ===== */
     byId('btn1').addEventListener('click', async () => {
       const out = byId('out1'), sp = byId('sp1');
       try {
@@ -165,19 +215,16 @@
       }
     });
 
-    // ===== מחשבון יחס קופה (בדפדפן) =====
+    /* ===== 2) מחשבון יחס קופה (בדפדפן) ===== */
     function potOdds(potBefore, toCall, rake=0) {
-      // מחזיר: מחיר, אחוז Equity דרוש, וגודל קופה סופי (לפני רייק)
       const finalPot = potBefore + toCall;
-      const price = toCall / finalPot; // יחס קופה קלאסי
-      const required = (toCall + rake) / finalPot; // התאמה לרייק (אם יש)
+      const price = toCall / finalPot;
+      const required = (toCall + rake) / finalPot;
       return { price, required, finalPot };
     }
     function callEV(equity, potBefore, toCall, rake=0) {
-      // EV(call) = equity*(potBefore+toCall-rake) - (1-equity)*toCall
       return equity * (potBefore + toCall - rake) - (1 - equity) * toCall;
     }
-
     byId('btnPot').addEventListener('click', () => {
       const pot = Number(byId('pot').value);
       const toCall = Number(byId('call').value);
@@ -201,6 +248,29 @@
         html += `<div class="kvs"><span class="kv">Equity שלך: ${(eq*100).toFixed(2)}%</span><span class="kv">EV(call): ${ev.toFixed(2)}</span></div>`;
       }
       byId('outPot').innerHTML = html;
+    });
+
+    /* ===== 3) Vs Open (3-bet) ===== */
+    byId('btn2').addEventListener('click', async () => {
+      const out = byId('out2'), sp = byId('sp2');
+      try {
+        const body = {
+          hand: byId('hand2').value.trim(),
+          hero_pos: byId('hero2').value.trim(),
+          opener_pos: byId('opener2').value.trim(),
+          stack: Number(byId('stack2').value)
+        };
+        if (!body.hand || !body.hero_pos || !body.opener_pos || !body.stack) {
+          renderVsOpen(out, {error:'נא למלא את כל השדות'}); return;
+        }
+        show(sp, true); out.textContent = 'טוען...';
+        const data = await callJSON(`${API_BASE_URL}/vs-open`, body);
+        renderVsOpen(out, data);
+      } catch (e) {
+        renderVsOpen(out, {error: String(e.message||e)});
+      } finally {
+        show(sp, false);
+      }
     });
   </script>
 </body>
