@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preflop Advisor</title>
+</head>
+<body>
+    <h1>Preflop Advisor</h1>
+    <label>Hand:</label>
+    <input type="text" id="hand" placeholder="AJo">
+    <label>Position:</label>
+    <input type="text" id="position" placeholder="MP">
+    <label>Stack (BB):</label>
+    <input type="number" id="stack" placeholder="40">
+    <button onclick="getRecommendation()">Get Recommendation</button>
+
+    <h3>Recommendation:</h3>
+    <pre id="result"></pre>
+
+    <script src="script.js"></script>
+</body>
+</html>
