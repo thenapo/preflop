@@ -42,7 +42,7 @@
   <!-- טאבים -->
   <div class="tabs">
     <div class="tab active" data-tab="open">קופה לא פתוחה (Open/Shove)</div>
-    <div class="tab" data-tab="vsopen">מול פתיחה (Bet-3)</div>
+    <div class="tab" data-tab="vsopen">מול פתיחה (3-Bet)</div>
   </div>
 
   <!-- טאב: Open/Shove -->
@@ -51,9 +51,13 @@
       <div class="row" style="margin-bottom:10px;"><div style="font-weight:600">המלצת פתיחה (Open/Shove)</div></div>
       <div class="row">
         <div><label>יד</label><input id="hand1" class="w160" placeholder="AKs / AJo / 22 / AhKh"></div>
-        <div><label>עמדה</label><select id="pos1" class="w120"><option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option><option>SB</option><option>BB</option></select></div>
+        <div><label>עמדה</label><select id="pos1" class="w120">
+          <option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option><option>SB</option><option>BB</option>
+        </select></div>
         <div><label>(BB) סטאק</label><input id="stack1" type="number" value="40" min="1" step="1"></div>
-        <div><label>מצב</label><select id="ctx1" class="w120"><option value="auto" selected>auto</option><option value="open">open</option><option value="shove">shove</option></select></div>
+        <div><label>מצב</label><select id="ctx1" class="w120">
+          <option value="auto" selected>auto</option><option value="open">open</option><option value="shove">shove</option>
+        </select></div>
         <div><button id="btn1" class="primary">חשב</button><span class="spinner" id="sp1"></span></div>
       </div>
       <div style="margin-top:12px;"><div class="result" id="out1">—</div></div>
@@ -67,8 +71,12 @@
       <div class="row" style="margin-bottom:10px;"><div style="font-weight:600">מול פתיחה (3-Bet)</div></div>
       <div class="row">
         <div><label>יד</label><input id="hand2" class="w160" placeholder="QQ / A5s / AQo"></div>
-        <div><label>העמדה שלך</label><select id="hero2" class="w120"><option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option><option>SB</option><option>BB</option></select></div>
-        <div><label>עמדת הפותח</label><select id="opener2" class="w120"><option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option></select></div>
+        <div><label>העמדה שלך</label><select id="hero2" class="w120">
+          <option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option><option>SB</option><option>BB</option>
+        </select></div>
+        <div><label>עמדת הפותח</label><select id="opener2" class="w120">
+          <option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option>
+        </select></div>
         <div><label>(BB) סטאק</label><input id="stack2" type="number" value="50" min="1" step="1"></div>
         <div><button id="btn2" class="primary">חשב</button><span class="spinner" id="sp2"></span></div>
       </div>
@@ -81,22 +89,23 @@
   <section class="card">
     <div class="row" style="margin-bottom:10px;"><div style="font-weight:600">מחשבון יחס קופה (Pot Odds)</div></div>
     <div class="row">
-      <div><label>גודל קופה לפני קול</label><input id="pot" type="number" step="0.01" value="100"></div>
-      <div><label>סכום לקול</label><input id="call" type="number" step="0.01" value="33"></div>
-      <div><label>רייק (אופציונלי)</label><input id="rake" type="number" step="0.01" value="0"></div>
-      <div><label>הערכת Equity (אופציונלי, 0–100%)</label><input id="eq" type="number" step="0.1" placeholder="למשל 35"></div>
+      <div><label>גודל קופה לפני קול (כולל הימור היריב)</label><input id="pot" type="number" step="0.01" value="100"></div>
+      <div><label>סכום לקול (To Call)</label><input id="call" type="number" step="0.01" value="25"></div>
+      <div><label>רייק במטבע (אופציונלי)</label><input id="rake" type="number" step="0.01" value="0"></div>
+      <div><label>אקוויטי שלך % (אופציונלי)</label><input id="eq" type="number" step="0.1" placeholder="למשל 35"></div>
       <div><button id="btnPot" class="primary">חשב</button></div>
     </div>
     <div style="margin-top:12px;"><div class="result" id="outPot">—</div></div>
-    <div class="muted">רץ בדפדפן — אין צורך ב-API.</div>
+    <div class="muted">נוסחה: Required = ToCall / (Pot + ToCall). אם הוזן Equity — תקבל גם EV וגם המלצה (Call/Fold).</div>
   </section>
 
 </main>
 
 <script>
+  /* ===== קונפיג ===== */
   const API_BASE_URL = "https://preflop-zon3.onrender.com";
 
-  // Tabs
+  /* ===== Tabs ===== */
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
@@ -106,12 +115,16 @@
     });
   });
 
+  /* ===== Helpers ===== */
   const byId = (id) => document.getElementById(id);
   const show = (el, on) => el.classList.toggle('show', !!on);
 
   function renderOpenResult(container, obj) {
     if (!obj) { container.textContent = '—'; return; }
-    if (obj.error) { container.innerHTML = '<div class="msg err"><b>שגיאה:</b> ' + obj.error + '</div>'; return; }
+    if (obj.error) {
+      container.innerHTML = '<div class="msg err"><b>שגיאה:</b> ' + obj.error + '</div>';
+      return;
+    }
     let html = '';
     if (obj.decision) html += '<div class="msg ok"><b>' + obj.decision + '</b></div>';
     let kvs = [];
@@ -134,12 +147,19 @@
   }
 
   async function callJSON(url, body) {
-    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    if (!res.ok) { let t = await res.text(); try { return JSON.parse(t); } catch(e) { throw new Error('HTTP '+res.status+' '+t); } }
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      let t = await res.text();
+      try { return JSON.parse(t); } catch(e) { throw new Error('HTTP '+res.status+' '+t); }
+    }
     return res.json();
   }
 
-  // Open/Shove
+  /* ===== Open/Shove ===== */
   byId('btn1').addEventListener('click', async () => {
     const out = byId('out1'), sp = byId('sp1');
     try {
@@ -147,45 +167,72 @@
       const position = byId('pos1').value.trim();
       const stack = Number(byId('stack1').value);
       const context = byId('ctx1').value;
-      if (!hand || !position || !stack) { renderOpenResult(out, {error:'נא למלא יד, עמדה וסטאק'}); return; }
+      if (!hand || !position || !stack) {
+        renderOpenResult(out, {error:'נא למלא יד, עמדה וסטאק'}); return;
+      }
       show(sp, true); out.textContent = 'טוען...';
       const data = await callJSON(`${API_BASE_URL}/recommend`, {hand, position, stack, context});
       renderOpenResult(out, data);
-    } catch (err) { renderOpenResult(out, {error: String(err.message || err)}); }
-    finally { show(sp, false); }
+    } catch (err) {
+      renderOpenResult(out, {error: String(err.message || err)});
+    } finally {
+      show(sp, false);
+    }
   });
 
-  // Pot Odds (client)
-  function potOdds(potBefore, toCall, rake=0) {
-    const finalPot = potBefore + toCall;
-    const price = toCall / finalPot;
-    const required = (toCall + rake) / finalPot;
-    return { price, required, finalPot };
+  /* ===== Pot Odds (מודל "כולל הימור היריב") ===== */
+  function requiredEquity_after(toCall, potBefore) {
+    // ReqEq = toCall / (potBefore + toCall)
+    return toCall / (potBefore + toCall);
   }
-  function callEV(equity, potBefore, toCall, rake=0) {
-    return equity * (potBefore + toCall - rake) - (1 - equity) * toCall;
+  function callEV_withRake(equity, potBefore, toCall, rake = 0) {
+    // EV(call) = equity*(finalPot - rake) - (1 - equity)*toCall
+    const finalPot = potBefore + toCall; // לפני רייק, כולל ההימור של היריב + הקול שלך
+    return equity * (finalPot - rake) - (1 - equity) * toCall;
   }
   byId('btnPot').addEventListener('click', () => {
-    const pot = Number(byId('pot').value);
+    const pot    = Number(byId('pot').value);
     const toCall = Number(byId('call').value);
-    const rake = Number(byId('rake').value || 0);
-    const eqInput = byId('eq').value;
-    if (!(pot >= 0) || !(toCall > 0)) { byId('outPot').innerHTML = '<div class="msg err"><b>שגיאה:</b> נא להזין קופה ≥ 0 וסכום לקול > 0</div>'; return; }
-    const {price, required, finalPot} = potOdds(pot, toCall, rake);
-    let html = '';
-    html += `<div class="msg ok"><b>Required Equity:</b> ${(required*100).toFixed(2)}%</div>`;
-    html += '<div class="kvs"><span class="kv">Price: ' + (price*100).toFixed(2) + '%</span>';
-    html += '<span class="kv">Final Pot (לפני רייק): ' + finalPot.toFixed(2) + '</span>';
-    html += '<span class="kv">Rake בחישוב: ' + rake.toFixed(2) + '</span></div>';
-    if (eqInput !== '') {
-      const eq = Math.max(0, Math.min(100, Number(eqInput))) / 100;
-      const ev = callEV(eq, pot, toCall, rake);
-      html += `<div class="kvs"><span class="kv">Equity שלך: ${(eq*100).toFixed(2)}%</span><span class="kv">EV(call): ${ev.toFixed(2)}</span></div>`;
+    const rake   = Number(byId('rake').value || 0);
+    const eqRaw  = byId('eq').value;
+
+    const out = byId('outPot');
+
+    if (!(pot >= 0) || !(toCall > 0)) {
+      out.innerHTML = '<div class="msg err"><b>שגיאה:</b> נא להזין קופה ≥ 0 וסכום לקול > 0</div>';
+      return;
     }
-    byId('outPot').innerHTML = html;
+
+    const req = requiredEquity_after(toCall, pot);   // 0..1
+    const finalPot = pot + toCall;                   // לפני רייק
+    let html = '';
+    html += `<div class="msg ok"><b>Required Equity:</b> ${(req*100).toFixed(2)}%</div>`;
+    html += '<div class="kvs">';
+    html += `<span class="kv">Final Pot: ${finalPot.toFixed(2)}</span>`;
+    html += `<span class="kv">Rake בחישוב: ${rake.toFixed(2)}</span>`;
+    html += '</div>';
+
+    // אם הוזן Equity — נחשב EV ונציג המלצה
+    if (eqRaw !== '') {
+      const eq = Math.max(0, Math.min(100, Number(eqRaw))) / 100; // 0..1
+      const ev = callEV_withRake(eq, pot, toCall, rake);
+      const recommendation = (eq + 1e-9 >= req) ? 'Call' : 'Fold';
+      const edge = (eq - req) * 100; // פער באחוזי אקוויטי מעל/מתחת ל-BE
+
+      html += `<div class="kvs">
+                 <span class="kv">Equity שלך: ${(eq*100).toFixed(2)}%</span>
+                 <span class="kv">EV(call): ${ev.toFixed(2)}</span>
+                 <span class="kv">פער מול דרוש: ${edge.toFixed(2)}pp</span>
+               </div>`;
+
+      const css = (recommendation === 'Call') ? 'ok' : 'err';
+      html += `<div class="msg ${css}"><b>המלצה:</b> ${recommendation}</div>`;
+    }
+
+    out.innerHTML = html;
   });
 
-  // Vs Open (3-bet)
+  /* ===== Vs Open (3-bet) ===== */
   byId('btn2').addEventListener('click', async () => {
     const out = byId('out2'), sp = byId('sp2');
     try {
@@ -195,12 +242,17 @@
         opener_pos: byId('opener2').value.trim(),
         stack: Number(byId('stack2').value)
       };
-      if (!body.hand || !body.hero_pos || !body.opener_pos || !body.stack) { renderVsOpen(out, {error:'נא למלא את כל השדות'}); return; }
+      if (!body.hand || !body.hero_pos || !body.opener_pos || !body.stack) {
+        renderVsOpen(out, {error:'נא למלא את כל השדות'}); return;
+      }
       show(sp, true); out.textContent = 'טוען...';
       const data = await callJSON(`${API_BASE_URL}/vs-open`, body);
       renderVsOpen(out, data);
-    } catch (e) { renderVsOpen(out, {error: String(e.message||e)}); }
-    finally { show(sp, false); }
+    } catch (e) {
+      renderVsOpen(out, {error: String(e.message||e)});
+    } finally {
+      show(sp, false);
+    }
   });
 </script>
 </body>
