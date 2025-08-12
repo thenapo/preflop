@@ -75,7 +75,7 @@
           <option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option><option>SB</option><option>BB</option>
         </select></div>
         <div><label>עמדת הפותח</label><select id="opener2" class="w120">
-          <option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option>
+          <option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option><option>SB</option>
         </select></div>
         <div><label>(BB) סטאק</label><input id="stack2" type="number" value="50" min="1" step="1"></div>
         <div><button id="btn2" class="primary">חשב</button><span class="spinner" id="sp2"></span></div>
@@ -270,6 +270,19 @@
   });
 
   /* ===== Vs Open (3-bet) ===== */
+  // אם הפותח הוא SB — נכוון אוטומטית את "העמדה שלך" ל-BB (ניתן לשנות אם רוצים)
+  byId('opener2').addEventListener('change', () => {
+    const opener = byId('opener2').value;
+    const heroSel = byId('hero2');
+    if (opener === 'SB') {
+      heroSel.value = 'BB';
+      // אם תרצה לנעול: heroSel.disabled = true; אחרת להשאיר כך:
+      heroSel.disabled = false;
+    } else {
+      heroSel.disabled = false;
+    }
+  });
+
   byId('btn2').addEventListener('click', async () => {
     const out = byId('out2'), sp = byId('sp2');
     try {
