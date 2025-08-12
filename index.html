@@ -1,36 +1,224 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Preflop Advisor</title>
+  <style>
+    :root { --bd:#e5e7eb; --tx:#111827; --sub:#6b7280; --ok:#065f46; --err:#991b1b; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:#fafafa; color:var(--tx); }
+    header { padding:18px 20px; background:#fff; border-bottom:1px solid var(--bd); position:sticky; top:0; }
+    h1 { margin:0; font-size:20px; }
+    main { max-width:880px; margin:22px auto; padding:0 16px; }
+    .card { background:#fff; border:1px solid var(--bd); border-radius:12px; padding:16px; margin-bottom:16px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+    label { font-size:13px; color:var(--sub); display:block; margin:0 0 6px; }
+    input, select, button { font-size:15px; padding:10px 12px; border-radius:10px; border:1px solid var(--bd); background:#fff; }
+    input[type="number"] { width:120px; }
+    .w120 { width:120px; } .w160 { width:160px; } .w220 { width:220px; }
+    button { cursor:pointer; }
+    button.primary { background:#111827; color:#fff; border-color:#111827; }
+    .tabs { display:flex; gap:8px; margin-bottom:10px; }
+    .tab { padding:10px 14px; border:1px solid var(--bd); border-bottom:none; border-radius:10px 10px 0 0; background:#f3f4f6; cursor:pointer; }
+    .tab.active { background:#fff; font-weight:600; }
+    .pane { display:none; } .pane.active { display:block; }
+    .result { border:1px dashed var(--bd); border-radius:10px; padding:12px; background:#fcfcfc; white-space:pre-wrap; }
+    .kvs { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .kv { padding:6px 10px; border-radius:999px; background:#f3f4f6; font-size:13px; }
+    .msg { padding:10px 12px; border-radius:10px; }
+    .msg.ok { background:#ecfdf5; color:var(--ok); border:1px solid #a7f3d0; }
+    .msg.err { background:#fef2f2; color:var(--err); border:1px solid #fecaca; }
+    .muted { color:var(--sub); font-size:13px; }
+    .spinner { display:none; }
+    .spinner.show { display:inline-block; width:16px; height:16px; border:2px solid #d1d5db; border-top-color:#111827; border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; margin-inline-start:8px;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
 </head>
 <body>
-  <h1>Preflop Advisor</h1>
+  <header><h1>Preflop Advisor — ממשק</h1></header>
+  <main>
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>API Base URL</label>
+          <input id="apiBase" class="w220" value="https://preflop-zon3.onrender.com" />
+        </div>
+        <div class="muted">אפשר לשנות אם תריץ דיפלוי חדש ב-Render</div>
+      </div>
+    </div>
 
-  Hand: <input id="hand" placeholder="AJo" />
-  &nbsp; Position: <input id="position" placeholder="MP" />
-  &nbsp; Stack (BB): <input id="stack" type="number" value="40" />
-  <button id="go">Get Recommendation</button>
+    <div class="tabs">
+      <div class="tab active" data-tab="open">קופה לא פתוחה (Open/Shove)</div>
+      <div class="tab" data-tab="vsopen">מול פתיחה (3-Bet)</div>
+    </div>
 
-  <h3>Recommendation:</h3>
-  <pre id="result"></pre>
+    <!-- Open/Shove -->
+    <section class="card pane active" id="pane-open">
+      <div class="row">
+        <div>
+          <label>יד</label>
+          <input id="hand1" class="w120" placeholder="AKs / AJo / 22 / AhKh">
+        </div>
+        <div>
+          <label>עמדה</label>
+          <select id="pos1" class="w120">
+            <option>UTG</option><option>MP</option><option>HJ</option>
+            <option>CO</option><option>BTN</option><option>SB</option><option>BB</option>
+          </select>
+        </div>
+        <div>
+          <label>סטאק (BB)</label>
+          <input id="stack1" type="number" value="40" min="1" step="1">
+        </div>
+        <div>
+          <label>מצב</label>
+          <select id="ctx1" class="w120">
+            <option value="auto" selected>auto</option>
+            <option value="open">open</option>
+            <option value="shove">shove</option>
+          </select>
+        </div>
+        <div>
+          <button id="btn1" class="primary">חשב</button>
+          <span class="spinner" id="sp1"></span>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="result" id="out1">—</div>
+      </div>
+    </section>
+
+    <!-- Vs Open (3-bet) -->
+    <section class="card pane" id="pane-vsopen">
+      <div class="row">
+        <div>
+          <label>יד</label>
+          <input id="hand2" class="w120" placeholder="QQ / A5s / AQo">
+        </div>
+        <div>
+          <label>העמדה שלך</label>
+          <select id="hero2" class="w120">
+            <option>UTG</option><option>MP</option><option>HJ</option>
+            <option>CO</option><option>BTN</option><option>SB</option><option>BB</option>
+          </select>
+        </div>
+        <div>
+          <label>עמדת הפותח</label>
+          <select id="opener2" class="w120">
+            <option>UTG</option><option>MP</option><option>HJ</option>
+            <option>CO</option><option>BTN</option>
+          </select>
+        </div>
+        <div>
+          <label>סטאק (BB)</label>
+          <input id="stack2" type="number" value="50" min="1" step="1">
+        </div>
+        <div>
+          <button id="btn2" class="primary">חשב</button>
+          <span class="spinner" id="sp2"></span>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="result" id="out2">—</div>
+      </div>
+    </section>
+
+    <div class="muted">טיפ: שמור קיצור דרך למסך הזה בנייד.</div>
+  </main>
 
   <script>
-    async function getRecommendation() {
-      const hand = document.getElementById("hand").value.trim();
-      const position = document.getElementById("position").value.trim();
-      const stack = Number(document.getElementById("stack").value);
-
-      const resp = await fetch("https://preflop-zon3.onrender.com/recommend", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ hand, position, stack, context: "auto" })
+    // Tabs
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.pane').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        document.getElementById('pane-' + t.dataset.tab).classList.add('active');
       });
-      const data = await resp.json();
-      document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+    });
+
+    const byId = (id) => document.getElementById(id);
+    const show = (el, on) => el.classList.toggle('show', !!on);
+
+    function apiBase() {
+      return byId('apiBase').value.trim().replace(/\/+$/,'');
     }
-    document.getElementById("go").addEventListener("click", getRecommendation);
+
+    function renderResult(container, obj) {
+      if (!obj) { container.textContent = '—'; return; }
+      if (obj.error) {
+        container.innerHTML = '<div class="msg err"><b>שגיאה:</b> ' + obj.error + '</div>';
+        return;
+      }
+      // הצגה קריאה: החלטה מודגשת + פירוט
+      let html = '';
+      if (obj.decision) html += '<div class="msg ok"><b>' + obj.decision + '</b></div>';
+      let kvs = [];
+      if (obj.sizing) kvs.push('סייזינג: ' + obj.sizing);
+      if (obj.why) kvs.push('הסבר: ' + obj.why);
+      if (kvs.length) {
+        html += '<div class="kvs">' + kvs.map(k => '<span class="kv">'+k+'</span>').join('') + '</div>';
+      } else {
+        html += '<pre>' + JSON.stringify(obj, null, 2) + '</pre>';
+      }
+      container.innerHTML = html;
+    }
+
+    async function callJSON(url, body) {
+      const res = await fetch(url, {
+        method:'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        // ננסה לפענח הודעת שגיאה מהשרת, אחרת נזרוק כללית
+        let t = await res.text();
+        try { return JSON.parse(t); } catch(e) { throw new Error('HTTP '+res.status+' '+t); }
+      }
+      return res.json();
+    }
+
+    // Open/Shove
+    byId('btn1').addEventListener('click', async () => {
+      const out = byId('out1'), sp = byId('sp1');
+      try {
+        const hand = byId('hand1').value.trim();
+        const position = byId('pos1').value.trim();
+        const stack = Number(byId('stack1').value);
+        const context = byId('ctx1').value;
+        if (!hand || !position || !stack) {
+          renderResult(out, {error:'נא למלא יד, עמדה וסטאק'}); return;
+        }
+        show(sp, true); out.textContent = 'טוען...';
+        const data = await callJSON(apiBase() + '/recommend', {hand, position, stack, context});
+        renderResult(out, data);
+      } catch (err) {
+        renderResult(out, {error: String(err.message || err)});
+      } finally {
+        show(sp, false);
+      }
+    });
+
+    // Vs Open (3-bet)
+    byId('btn2').addEventListener('click', async () => {
+      const out = byId('out2'), sp = byId('sp2');
+      try {
+        const hand = byId('hand2').value.trim();
+        const hero_pos = byId('hero2').value.trim();
+        const opener_pos = byId('opener2').value.trim();
+        const stack = Number(byId('stack2').value);
+        if (!hand || !hero_pos || !opener_pos || !stack) {
+          renderResult(out, {error:'נא למלא את כל השדות'}); return;
+        }
+        show(sp, true); out.textContent = 'טוען...';
+        const data = await callJSON(apiBase() + '/vs-open', {hand, hero_pos, opener_pos, stack});
+        renderResult(out, data);
+      } catch (err) {
+        renderResult(out, {error: String(err.message || err)});
+      } finally {
+        show(sp, false);
+      }
+    });
   </script>
 </body>
 </html>
