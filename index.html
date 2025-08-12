@@ -7,21 +7,20 @@
   <style>
     :root { --bd:#e5e7eb; --tx:#111827; --sub:#6b7280; --ok:#065f46; --err:#991b1b; --chip:#111827; }
     *{box-sizing:border-box}
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:#fafafa; color:var(--tx); }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; background:#fafafa; color:var(--tx); }
     header { padding:14px 16px; background:#fff; border-bottom:1px solid var(--bd); position:sticky; top:0; }
     h1 { margin:0; font-size:20px; }
     main { max-width:980px; margin:20px auto; padding:0 16px; }
     .tabs { display:flex; gap:10px; margin-bottom:14px; }
     .tab { padding:10px 14px; border:1px solid var(--bd); border-bottom:none; border-radius:10px 10px 0 0; background:#f3f4f6; cursor:pointer; }
     .tab.active { background:#fff; font-weight:600; }
-    .pane { display:none; }
-    .pane.active { display:block; }
+    .pane { display:none; } .pane.active { display:block; }
     .card { background:#fff; border:1px solid var(--bd); border-radius:16px; padding:16px; margin-bottom:16px; }
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
     label { font-size:13px; color:var(--sub); display:block; margin:0 0 6px; }
     input, select, button { font-size:15px; padding:10px 12px; border-radius:10px; border:1px solid var(--bd); background:#fff; }
     input[type="number"] { width:120px; }
-    .w120 { width:120px; } .w160 { width:160px; } .w220 { width:220px; }
+    .w120 { width:120px; } .w160 { width:160px; }
     button { cursor:pointer; }
     button.primary { background:var(--chip); color:#fff; border-color:var(--chip); }
     .result { border:1px dashed var(--bd); border-radius:12px; padding:12px; background:#fcfcfc; min-height:44px; }
@@ -31,275 +30,178 @@
     .kvs { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px; }
     .kv { padding:6px 10px; border-radius:999px; background:#f3f4f6; font-size:13px; }
     .muted { color:var(--sub); font-size:13px; margin-top:6px; }
-    .spinner { display:none; width:16px; height:16px; border:2px solid #d1d5db; border-top-color:#111827; border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; margin-inline-start:8px;}
+    .spinner { display:none; width:16px; height:16px; border:2px solid #d1d5db; border-top-color:#111827; border-radius:50%; animation:spin .8s linear infinite; vertical-align:middle; margin-inline-start:8px;}
     .spinner.show { display:inline-block; }
     @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
-  <header><h1>ממשק — Preflop Advisor</h1></header>
+<header><h1>ממשק — Preflop Advisor</h1></header>
+<main>
 
-  <main>
-    <!-- Tabs -->
-    <div class="tabs">
-      <div class="tab active" data-tab="open">קופה לא פתוחה (Open/Shove)</div>
-      <div class="tab" data-tab="vsopen">מול פתיחה (Bet-3)</div>
+  <!-- טאבים -->
+  <div class="tabs">
+    <div class="tab active" data-tab="open">קופה לא פתוחה (Open/Shove)</div>
+    <div class="tab" data-tab="vsopen">מול פתיחה (Bet-3)</div>
+  </div>
+
+  <!-- טאב: Open/Shove -->
+  <section class="pane active" id="pane-open">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px;"><div style="font-weight:600">המלצת פתיחה (Open/Shove)</div></div>
+      <div class="row">
+        <div><label>יד</label><input id="hand1" class="w160" placeholder="AKs / AJo / 22 / AhKh"></div>
+        <div><label>עמדה</label><select id="pos1" class="w120"><option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option><option>SB</option><option>BB</option></select></div>
+        <div><label>(BB) סטאק</label><input id="stack1" type="number" value="40" min="1" step="1"></div>
+        <div><label>מצב</label><select id="ctx1" class="w120"><option value="auto" selected>auto</option><option value="open">open</option><option value="shove">shove</option></select></div>
+        <div><button id="btn1" class="primary">חשב</button><span class="spinner" id="sp1"></span></div>
+      </div>
+      <div style="margin-top:12px;"><div class="result" id="out1">—</div></div>
+      <div class="muted">טיפ: שמור קיצור דרך למסך הזה בנייד.</div>
     </div>
+  </section>
 
-    <!-- Pane: Open/Shove + Pot Odds -->
-    <section class="pane active" id="pane-open">
-      <!-- Open/Shove -->
-      <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-weight:600">המלצת פתיחה (Open/Shove)</div>
-        </div>
-        <div class="row">
-          <div>
-            <label>יד</label>
-            <input id="hand1" class="w160" placeholder="AKs / AJo / 22 / AhKh">
-          </div>
-          <div>
-            <label>עמדה</label>
-            <select id="pos1" class="w120">
-              <option>UTG</option><option>MP</option><option>HJ</option>
-              <option>CO</option><option>BTN</option><option>SB</option><option>BB</option>
-            </select>
-          </div>
-          <div>
-            <label>(BB) סטאק</label>
-            <input id="stack1" type="number" value="40" min="1" step="1">
-          </div>
-          <div>
-            <label>מצב</label>
-            <select id="ctx1" class="w120">
-              <option value="auto" selected>auto</option>
-              <option value="open">open</option>
-              <option value="shove">shove</option>
-            </select>
-          </div>
-          <div>
-            <button id="btn1" class="primary">חשב</button>
-            <span class="spinner" id="sp1"></span>
-          </div>
-        </div>
-        <div style="margin-top:12px;">
-          <div class="result" id="out1">—</div>
-        </div>
-        <div class="muted">טיפ: שמור קיצור דרך למסך הזה בנייד.</div>
+  <!-- טאב: Vs Open (3-bet) -->
+  <section class="pane" id="pane-vsopen">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px;"><div style="font-weight:600">מול פתיחה (3-Bet)</div></div>
+      <div class="row">
+        <div><label>יד</label><input id="hand2" class="w160" placeholder="QQ / A5s / AQo"></div>
+        <div><label>העמדה שלך</label><select id="hero2" class="w120"><option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option><option>SB</option><option>BB</option></select></div>
+        <div><label>עמדת הפותח</label><select id="opener2" class="w120"><option>UTG</option><option>MP</option><option>HJ</option><option>CO</option><option>BTN</option></select></div>
+        <div><label>(BB) סטאק</label><input id="stack2" type="number" value="50" min="1" step="1"></div>
+        <div><button id="btn2" class="primary">חשב</button><span class="spinner" id="sp2"></span></div>
       </div>
+      <div style="margin-top:12px;"><div class="result" id="out2">—</div></div>
+      <div class="muted">נשלח ל-API: ‎/vs-open</div>
+    </div>
+  </section>
 
-      <!-- Pot Odds -->
-      <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-weight:600">מחשבון יחס קופה (Pot Odds)</div>
-        </div>
-        <div class="row">
-          <div>
-            <label>גודל קופה לפני קול</label>
-            <input id="pot" type="number" step="0.01" value="100">
-          </div>
-          <div>
-            <label>סכום לקול</label>
-            <input id="call" type="number" step="0.01" value="33">
-          </div>
-          <div>
-            <label>רייק (אופציונלי)</label>
-            <input id="rake" type="number" step="0.01" value="0">
-          </div>
-          <div>
-            <label>הערכת Equity (אופציונלי, 0–100%)</label>
-            <input id="eq" type="number" step="0.1" placeholder="למשל 35">
-          </div>
-          <div>
-            <button id="btnPot" class="primary">חשב</button>
-          </div>
-        </div>
-        <div style="margin-top:12px;">
-          <div class="result" id="outPot">—</div>
-        </div>
-        <div class="muted">נוסחאות בסיסיות רצות בדפדפן: אין צורך ב-API.</div>
-      </div>
-    </section>
+  <!-- מחשבון יחס קופה: מחוץ לטאבים כדי שיופיע תמיד -->
+  <section class="card">
+    <div class="row" style="margin-bottom:10px;"><div style="font-weight:600">מחשבון יחס קופה (Pot Odds)</div></div>
+    <div class="row">
+      <div><label>גודל קופה לפני קול</label><input id="pot" type="number" step="0.01" value="100"></div>
+      <div><label>סכום לקול</label><input id="call" type="number" step="0.01" value="33"></div>
+      <div><label>רייק (אופציונלי)</label><input id="rake" type="number" step="0.01" value="0"></div>
+      <div><label>הערכת Equity (אופציונלי, 0–100%)</label><input id="eq" type="number" step="0.1" placeholder="למשל 35"></div>
+      <div><button id="btnPot" class="primary">חשב</button></div>
+    </div>
+    <div style="margin-top:12px;"><div class="result" id="outPot">—</div></div>
+    <div class="muted">רץ בדפדפן — אין צורך ב-API.</div>
+  </section>
 
-    <!-- Pane: Vs Open (3-bet) -->
-    <section class="pane" id="pane-vsopen">
-      <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-weight:600">מול פתיחה (3-Bet)</div>
-        </div>
-        <div class="row">
-          <div>
-            <label>יד</label>
-            <input id="hand2" class="w160" placeholder="QQ / A5s / AQo">
-          </div>
-          <div>
-            <label>העמדה שלך</label>
-            <select id="hero2" class="w120">
-              <option>UTG</option><option>MP</option><option>HJ</option>
-              <option>CO</option><option>BTN</option><option>SB</option><option>BB</option>
-            </select>
-          </div>
-          <div>
-            <label>עמדת הפותח</label>
-            <select id="opener2" class="w120">
-              <option>UTG</option><option>MP</option><option>HJ</option>
-              <option>CO</option><option>BTN</option>
-            </select>
-          </div>
-          <div>
-            <label>(BB) סטאק</label>
-            <input id="stack2" type="number" value="50" min="1" step="1">
-          </div>
-          <div>
-            <button id="btn2" class="primary">חשב</button>
-            <span class="spinner" id="sp2"></span>
-          </div>
-        </div>
-        <div style="margin-top:12px;">
-          <div class="result" id="out2">—</div>
-        </div>
-        <div class="muted">נשלח ל-API: ‎/vs-open</div>
-      </div>
-    </section>
-  </main>
+</main>
 
-  <script>
-    /* ===== קונפיג ===== */
-    const API_BASE_URL = "https://preflop-zon3.onrender.com";
+<script>
+  const API_BASE_URL = "https://preflop-zon3.onrender.com";
 
-    /* ===== Tabs ===== */
-    document.querySelectorAll('.tab').forEach(t => {
-      t.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-        document.querySelectorAll('.pane').forEach(x => x.classList.remove('active'));
-        t.classList.add('active');
-        document.getElementById('pane-' + t.dataset.tab).classList.add('active');
-      });
+  // Tabs
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.pane').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('pane-' + t.dataset.tab).classList.add('active');
     });
+  });
 
-    /* ===== Helpers ===== */
-    const byId = (id) => document.getElementById(id);
-    const show = (el, on) => el.classList.toggle('show', !!on);
+  const byId = (id) => document.getElementById(id);
+  const show = (el, on) => el.classList.toggle('show', !!on);
 
-    function renderOpenResult(container, obj) {
-      if (!obj) { container.textContent = '—'; return; }
-      if (obj.error) {
-        container.innerHTML = '<div class="msg err"><b>שגיאה:</b> ' + obj.error + '</div>';
-        return;
-      }
-      let html = '';
-      if (obj.decision) html += '<div class="msg ok"><b>' + obj.decision + '</b></div>';
-      let kvs = [];
-      if (obj.sizing) kvs.push('סייזינג: ' + obj.sizing);
-      if (obj.why)    kvs.push('הסבר: ' + obj.why);
-      if (kvs.length) html += '<div class="kvs">' + kvs.map(k => '<span class="kv">'+k+'</span>').join('') + '</div>';
-      container.innerHTML = html || '<pre>'+JSON.stringify(obj,null,2)+'</pre>';
+  function renderOpenResult(container, obj) {
+    if (!obj) { container.textContent = '—'; return; }
+    if (obj.error) { container.innerHTML = '<div class="msg err"><b>שגיאה:</b> ' + obj.error + '</div>'; return; }
+    let html = '';
+    if (obj.decision) html += '<div class="msg ok"><b>' + obj.decision + '</b></div>';
+    let kvs = [];
+    if (obj.sizing) kvs.push('סייזינג: ' + obj.sizing);
+    if (obj.why)    kvs.push('הסבר: ' + obj.why);
+    if (kvs.length) html += '<div class="kvs">' + kvs.map(k => '<span class="kv">'+k+'</span>').join('') + '</div>';
+    container.innerHTML = html || '<pre>'+JSON.stringify(obj,null,2)+'</pre>';
+  }
+
+  function renderVsOpen(container, obj){
+    if (!obj) { container.textContent = '—'; return; }
+    if (obj.error) { container.innerHTML = '<div class="msg err"><b>שגיאה:</b> '+obj.error+'</div>'; return; }
+    let html = '';
+    if (obj.decision) html += '<div class="msg ok"><b>'+obj.decision+'</b></div>';
+    let kvs = [];
+    if (obj.sizing) kvs.push('סייזינג: ' + obj.sizing);
+    if (obj.why)    kvs.push('הסבר: '   + obj.why);
+    if (kvs.length) html += '<div class="kvs">' + kvs.map(k => '<span class="kv">'+k+'</span>').join('') + '</div>';
+    container.innerHTML = html || '<pre>'+JSON.stringify(obj,null,2)+'</pre>';
+  }
+
+  async function callJSON(url, body) {
+    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (!res.ok) { let t = await res.text(); try { return JSON.parse(t); } catch(e) { throw new Error('HTTP '+res.status+' '+t); } }
+    return res.json();
+  }
+
+  // Open/Shove
+  byId('btn1').addEventListener('click', async () => {
+    const out = byId('out1'), sp = byId('sp1');
+    try {
+      const hand = byId('hand1').value.trim();
+      const position = byId('pos1').value.trim();
+      const stack = Number(byId('stack1').value);
+      const context = byId('ctx1').value;
+      if (!hand || !position || !stack) { renderOpenResult(out, {error:'נא למלא יד, עמדה וסטאק'}); return; }
+      show(sp, true); out.textContent = 'טוען...';
+      const data = await callJSON(`${API_BASE_URL}/recommend`, {hand, position, stack, context});
+      renderOpenResult(out, data);
+    } catch (err) { renderOpenResult(out, {error: String(err.message || err)}); }
+    finally { show(sp, false); }
+  });
+
+  // Pot Odds (client)
+  function potOdds(potBefore, toCall, rake=0) {
+    const finalPot = potBefore + toCall;
+    const price = toCall / finalPot;
+    const required = (toCall + rake) / finalPot;
+    return { price, required, finalPot };
+  }
+  function callEV(equity, potBefore, toCall, rake=0) {
+    return equity * (potBefore + toCall - rake) - (1 - equity) * toCall;
+  }
+  byId('btnPot').addEventListener('click', () => {
+    const pot = Number(byId('pot').value);
+    const toCall = Number(byId('call').value);
+    const rake = Number(byId('rake').value || 0);
+    const eqInput = byId('eq').value;
+    if (!(pot >= 0) || !(toCall > 0)) { byId('outPot').innerHTML = '<div class="msg err"><b>שגיאה:</b> נא להזין קופה ≥ 0 וסכום לקול > 0</div>'; return; }
+    const {price, required, finalPot} = potOdds(pot, toCall, rake);
+    let html = '';
+    html += `<div class="msg ok"><b>Required Equity:</b> ${(required*100).toFixed(2)}%</div>`;
+    html += '<div class="kvs"><span class="kv">Price: ' + (price*100).toFixed(2) + '%</span>';
+    html += '<span class="kv">Final Pot (לפני רייק): ' + finalPot.toFixed(2) + '</span>';
+    html += '<span class="kv">Rake בחישוב: ' + rake.toFixed(2) + '</span></div>';
+    if (eqInput !== '') {
+      const eq = Math.max(0, Math.min(100, Number(eqInput))) / 100;
+      const ev = callEV(eq, pot, toCall, rake);
+      html += `<div class="kvs"><span class="kv">Equity שלך: ${(eq*100).toFixed(2)}%</span><span class="kv">EV(call): ${ev.toFixed(2)}</span></div>`;
     }
+    byId('outPot').innerHTML = html;
+  });
 
-    function renderVsOpen(container, obj){
-      if (!obj) { container.textContent = '—'; return; }
-      if (obj.error) { container.innerHTML = '<div class="msg err"><b>שגיאה:</b> '+obj.error+'</div>'; return; }
-      let html = '';
-      if (obj.decision) html += '<div class="msg ok"><b>'+obj.decision+'</b></div>';
-      let kvs = [];
-      if (obj.sizing) kvs.push('סייזינג: ' + obj.sizing);
-      if (obj.why)    kvs.push('הסבר: '   + obj.why);
-      if (kvs.length) html += '<div class="kvs">' + kvs.map(k => '<span class="kv">'+k+'</span>').join('') + '</div>';
-      container.innerHTML = html || '<pre>'+JSON.stringify(obj,null,2)+'</pre>';
-    }
-
-    async function callJSON(url, body) {
-      const res = await fetch(url, {
-        method:'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) {
-        let t = await res.text();
-        try { return JSON.parse(t); } catch(e) { throw new Error('HTTP '+res.status+' '+t); }
-      }
-      return res.json();
-    }
-
-    /* ===== Open/Shove ===== */
-    byId('btn1').addEventListener('click', async () => {
-      const out = byId('out1'), sp = byId('sp1');
-      try {
-        const hand = byId('hand1').value.trim();
-        const position = byId('pos1').value.trim();
-        const stack = Number(byId('stack1').value);
-        const context = byId('ctx1').value;
-        if (!hand || !position || !stack) {
-          renderOpenResult(out, {error:'נא למלא יד, עמדה וסטאק'}); return;
-        }
-        show(sp, true); out.textContent = 'טוען...';
-        const data = await callJSON(`${API_BASE_URL}/recommend`, {hand, position, stack, context});
-        renderOpenResult(out, data);
-      } catch (err) {
-        renderOpenResult(out, {error: String(err.message || err)});
-      } finally {
-        show(sp, false);
-      }
-    });
-
-    /* ===== Pot Odds (Client) ===== */
-    function potOdds(potBefore, toCall, rake=0) {
-      const finalPot = potBefore + toCall;
-      const price = toCall / finalPot;
-      const required = (toCall + rake) / finalPot;
-      return { price, required, finalPot };
-    }
-    function callEV(equity, potBefore, toCall, rake=0) {
-      return equity * (potBefore + toCall - rake) - (1 - equity) * toCall;
-    }
-    byId('btnPot').addEventListener('click', () => {
-      const pot = Number(byId('pot').value);
-      const toCall = Number(byId('call').value);
-      const rake = Number(byId('rake').value || 0);
-      const eqInput = byId('eq').value;
-      if (!(pot >= 0) || !(toCall > 0)) {
-        byId('outPot').innerHTML = '<div class="msg err"><b>שגיאה:</b> נא להזין קופה ≥ 0 וסכום לקול > 0</div>';
-        return;
-      }
-      const {price, required, finalPot} = potOdds(pot, toCall, rake);
-      let html = '';
-      html += `<div class="msg ok"><b>Required Equity:</b> ${(required*100).toFixed(2)}%</div>`;
-      html += '<div class="kvs">';
-      html += `<span class="kv">Price: ${(price*100).toFixed(2)}%</span>`;
-      html += `<span class="kv">Final Pot (לפני רייק): ${finalPot.toFixed(2)}</span>`;
-      html += `<span class="kv">Rake בחישוב: ${rake.toFixed(2)}</span>`;
-      html += '</div>';
-      if (eqInput !== '') {
-        const eq = Math.max(0, Math.min(100, Number(eqInput))) / 100;
-        const ev = callEV(eq, pot, toCall, rake);
-        html += `<div class="kvs"><span class="kv">Equity שלך: ${(eq*100).toFixed(2)}%</span><span class="kv">EV(call): ${ev.toFixed(2)}</span></div>`;
-      }
-      byId('outPot').innerHTML = html;
-    });
-
-    /* ===== Vs Open (3-bet) ===== */
-    byId('btn2').addEventListener('click', async () => {
-      const out = byId('out2'), sp = byId('sp2');
-      try {
-        const body = {
-          hand: byId('hand2').value.trim(),
-          hero_pos: byId('hero2').value.trim(),
-          opener_pos: byId('opener2').value.trim(),
-          stack: Number(byId('stack2').value)
-        };
-        if (!body.hand || !body.hero_pos || !body.opener_pos || !body.stack) {
-          renderVsOpen(out, {error:'נא למלא את כל השדות'}); return;
-        }
-        show(sp, true); out.textContent = 'טוען...';
-        const data = await callJSON(`${API_BASE_URL}/vs-open`, body);
-        renderVsOpen(out, data);
-      } catch (e) {
-        renderVsOpen(out, {error: String(e.message||e)});
-      } finally {
-        show(sp, false);
-      }
-    });
-  </script>
+  // Vs Open (3-bet)
+  byId('btn2').addEventListener('click', async () => {
+    const out = byId('out2'), sp = byId('sp2');
+    try {
+      const body = {
+        hand: byId('hand2').value.trim(),
+        hero_pos: byId('hero2').value.trim(),
+        opener_pos: byId('opener2').value.trim(),
+        stack: Number(byId('stack2').value)
+      };
+      if (!body.hand || !body.hero_pos || !body.opener_pos || !body.stack) { renderVsOpen(out, {error:'נא למלא את כל השדות'}); return; }
+      show(sp, true); out.textContent = 'טוען...';
+      const data = await callJSON(`${API_BASE_URL}/vs-open`, body);
+      renderVsOpen(out, data);
+    } catch (e) { renderVsOpen(out, {error: String(e.message||e)}); }
+    finally { show(sp, false); }
+  });
+</script>
 </body>
 </html>
-י
